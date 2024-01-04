@@ -1,8 +1,9 @@
-from pynput.keyboard import Key, Listener
 import pyaudio, wave, sched, time, sys
 from datetime import datetime
 from openai import OpenAI
 from io import BytesIO
+from src.listener import MyListener
+from src.audio_input_buffer import AudioInputBuffer
 client = OpenAI()
 p = pyaudio.PyAudio()
 frames = []
@@ -16,46 +17,10 @@ def callback(in_data, frame_count, time_info, status):
     frames.append(in_data)
     return (in_data, pyaudio.paContinue)
 
-class MyListener(Listener) : 
-
-    def __init__(self):
-        super(MyListener, self).__init__(self.on_press, self.on_release)
-        self.key_pressed = None
-
-    def on_press(self, key):
-        if key.char == 'r':
-            self.key_pressed = True
-        return True
-
-    def on_release(self, key):
-        if key.char == 'r':
-            self.key_pressed = False
-        return True
-
 listener = MyListener()
 listener.start()
 started = False
 stream = None
-class WavFileBuilder : 
-
-    def __init__(self):
-        _time = datetime.now()
-        filename = f"output/{datetime.timestamp(_time)}.wav" 
-        self.buffer = BytesIO()
-        self.buffer.name = "output.wav"
-        self.wf = wave.open(self.buffer, 'wb')
-        self.filename = filename
-        self.wf.setnchannels(CHANNELS)
-        self.wf.setsampwidth(p.get_sample_size(FORMAT))
-        self.wf.setframerate(RATE)
-
-
-    def writeframes(self, frames):
-        self.wf.writeframes(frames)
-        
-    def close(self):
-        self.wf.close()
-
 
 def get_transcript(filebuilder):
     transcript = client.audio.transcriptions.create(
@@ -86,8 +51,7 @@ def recorder():
         print("Stop recording")
         stream.stop_stream()
         stream.close()
-        #p.terminate()
-        wf = WavFileBuilder()
+        wf = AudioInputBuffer(CHANNELS, p.get_sample_size(FORMAT), RATE)
         wf.writeframes(b''.join(frames))
         wf.close()
         get_transcript(wf)
