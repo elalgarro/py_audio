@@ -1,4 +1,4 @@
-## How to run the audio transpiler 
+## How to run the audio transcriptor 
 
  - install the dependencies `pip install -r requirements.txt` 
  - on MacOS, PyAudio has a system dependency on `portaudio`, so you'll need to install that 
